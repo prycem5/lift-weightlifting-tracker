@@ -16,7 +16,7 @@ export class InfraStack extends cdk.Stack {
     // The code that defines your stack goes here
 
     // single liftEntites table with combination key allows for flexible data modeling. 
-    const liftEntites = new dynamodb.Table(this, 'liftEntities', {
+    const liftEntities = new dynamodb.Table(this, 'liftEntities', {
       tableName: 'liftEntities',
       partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING },
       sortKey: {name: 'SK', type: dynamodb.AttributeType.STRING},
@@ -28,34 +28,34 @@ export class InfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'getEntity.handler',
       code: lambda.Code.fromAsset('lambda'),
-      environment: {TABLE_NAME: liftEntites.tableName},
+      environment: {TABLE_NAME: liftEntities.tableName},
     });
 
     const createEntity = new lambda.Function(this, 'createEntity', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'createEntity.handler',
       code: lambda.Code.fromAsset('lambda'),
-      environment: {TABLE_NAME: liftEntites.tableName, ADMIN_ID: process.env.ADMIN_EMAIL || ''} //when targeting user and exercise creation, not usable by general users.
+      environment: {TABLE_NAME: liftEntities.tableName, ADMIN_ID: process.env.ADMIN_ID || ''} //when targeting user and exercise creation, not usable by general users.
     });
 
     const updateEntity = new lambda.Function(this, 'updateEntity', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'updateEntity.handler',
       code: lambda.Code.fromAsset('lambda'),
-      environment: {TABLE_NAME: liftEntites.tableName}
+      environment: {TABLE_NAME: liftEntities.tableName}
     });
 
     const deleteEntity = new lambda.Function(this, 'deleteEntity', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'deleteEntity.handler',
       code: lambda.Code.fromAsset('lambda'),
-      environment: {TABLE_NAME: liftEntites.tableName}
+      environment: {TABLE_NAME: liftEntities.tableName}
     });
 
-    liftEntites.grantReadData(getEntity);
-    liftEntites.grantWriteData(createEntity);
-    liftEntites.grantReadWriteData(updateEntity);
-    liftEntites.grantWriteData(deleteEntity);
+    liftEntities.grantReadData(getEntity);
+    liftEntities.grantWriteData(createEntity);
+    liftEntities.grantReadWriteData(updateEntity);
+    liftEntities.grantWriteData(deleteEntity);
 
     const userPool = new cognito.UserPool(this, 'liftUserPool', {
       signInAliases: { email: true },
@@ -65,9 +65,11 @@ export class InfraStack extends cdk.Stack {
     });
 
     const userPoolClient = userPool.addClient('liftUserPoolClient', {
-       authFlows: { userSrp: true}
+       authFlows: { userSrp: true} // passwords never traverse the network, secure authentication protocol.
     });
 
+    // prevents unauthroized access to api methods. Only authenticated users may access. Verification still required so users can only perform
+    // actions on their own data.
     const auth = new apigateway.CognitoUserPoolsAuthorizer(this, 'liftAPIAuthorizer', {
       cognitoUserPools: [userPool]
     });
@@ -90,6 +92,9 @@ export class InfraStack extends cdk.Stack {
     const sets = workout.addResource('sets');
     const set = sets.addResource('{setId}');
 
+
+    // exercises are available to all users. Exercises may only be created by admin users for now.
+    // user created exercises mayy be added later as an additional resource.
     const exercises = api.root.addResource('exercises');
     const exercise = exercises.addResource('{exerciseId}');
 
