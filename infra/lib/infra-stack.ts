@@ -65,7 +65,7 @@ export class InfraStack extends cdk.Stack {
     });
 
     const userPoolClient = userPool.addClient('liftUserPoolClient', {
-       authFlows: { userSrp: true} // passwords never traverse the network, secure authentication protocol.
+       authFlows: { userSrp: true, userPassword: true} // passwords never traverse the network, secure authentication protocol.
     });
 
     // prevents unauthroized access to api methods. Only authenticated users may access. Verification still required so users can only perform
