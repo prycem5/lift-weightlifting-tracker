@@ -35,7 +35,7 @@ export class InfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'createEntity.handler',
       code: lambda.Code.fromAsset('lambda'),
-      environment: {TABLE_NAME: liftEntities.tableName, ADMIN_ID: process.env.ADMIN_ID || ''} //when targeting user and exercise creation, not usable by general users.
+      environment: {TABLE_NAME: liftEntities.tableName, ADMIN_ID: process.env.ADMIN_ID || ''}, // when targeting user and exercise creation, not usable by general users.
     });
 
     const updateEntity = new lambda.Function(this, 'updateEntity', {
@@ -49,7 +49,7 @@ export class InfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'deleteEntity.handler',
       code: lambda.Code.fromAsset('lambda'),
-      environment: {TABLE_NAME: liftEntities.tableName}
+      environment: {TABLE_NAME: liftEntities.tableName, ADMIN_ID: process.env.ADMIN_ID || ''}
     });
 
     liftEntities.grantReadData(getEntity);
