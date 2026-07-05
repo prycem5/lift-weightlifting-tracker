@@ -23,6 +23,14 @@ export class InfraStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST, // most cost-effective for variable workloads.
     });
 
+    liftEntities.addGlobalSecondaryIndex({ /* for doing mass queries of a 
+      single entity type without use for scan*/
+      indexName: 'liftEntitiesGSI',
+      partitionKey: { name: 'entityType', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'entityId', type: dynamodb.AttributeType.STRING },
+      projectionType: dynamodb.ProjectionType.ALL
+    });
+
     // pointers to code defined in /lambda, which will be integrated within the api gateway.
     const getEntity = new lambda.Function(this, 'getEntity', {
       runtime: lambda.Runtime.NODEJS_20_X,
@@ -85,17 +93,17 @@ export class InfraStack extends cdk.Stack {
 
     // structure for api endpoints with integrations with lambda functions. Structure mirrors 
     // data schema.
-    const users = api.root.addResource('users');
+    const users = api.root.addResource('user');
     const user = users.addResource('{userId}');
-    const workouts = user.addResource('workouts');
+    const workouts = api.root.addResource('workout');
     const workout = workouts.addResource('{workoutId}');
-    const sets = workout.addResource('sets');
+    const sets = api.root.addResource('set');
     const set = sets.addResource('{setId}');
 
 
     // exercises are available to all users. Exercises may only be created by admin users for now.
-    // user created exercises mayy be added later as an additional resource.
-    const exercises = api.root.addResource('exercises');
+    // user created exercises may be added later as an additional resource.
+    const exercises = api.root.addResource('exercise');
     const exercise = exercises.addResource('{exerciseId}');
 
 
