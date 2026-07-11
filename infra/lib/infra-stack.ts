@@ -50,7 +50,7 @@ export class InfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'updateEntity.handler',
       code: lambda.Code.fromAsset('lambda'),
-      environment: {TABLE_NAME: liftEntities.tableName}
+      environment: {TABLE_NAME: liftEntities.tableName, ADMIN_ID: process.env.ADMIN_ID || ''}
     });
 
     const deleteEntity = new lambda.Function(this, 'deleteEntity', {
