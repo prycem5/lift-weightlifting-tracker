@@ -141,6 +141,8 @@ export class InfraStack extends cdk.Stack {
       resource.addMethod('DELETE', new apigateway.LambdaIntegration(deleteEntity), {authorizer: auth, authorizationType: apigateway.AuthorizationType.COGNITO});
     }
 
+    users.addMethod('PUT', new apigateway.LambdaIntegration(updateEntity), {authorizer: auth, authorizationType: apigateway.AuthorizationType.COGNITO})
+
     // outputs to easily pass directly to the Next.js frontend config.
     new cdk.CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
     new cdk.CfnOutput(this, 'UserPoolClientId', { value: userPoolClient.userPoolClientId });
