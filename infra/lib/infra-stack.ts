@@ -31,7 +31,7 @@ export class InfraStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL
     });
 
-    // pointers to code defined in /lambda, which will be integrated within the api gateway.
+    // pointers to code defined in /lambda, which will be integrated within the api gateway and cognito.
     const getEntity = new lambda.Function(this, 'getEntity', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'getEntity.handler',
@@ -60,10 +60,26 @@ export class InfraStack extends cdk.Stack {
       environment: {TABLE_NAME: liftEntities.tableName, ADMIN_ID: process.env.ADMIN_ID || ''}
     });
 
+    const postConfirmation = new lambda.Function(this, 'postConfirmation', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'postConfirmation.handler',
+      code: lambda.Code.fromAsset('lambda/cognito'),
+      environment:{TABLE_NAME: liftEntities.tableName}
+    });
+
+        const preToken = new lambda.Function(this, 'preToken', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      handler: 'preToken.handler',
+      code: lambda.Code.fromAsset('lambda/cognito'),
+      environment:{TABLE_NAME: liftEntities.tableName}
+    });
+
     liftEntities.grantReadData(getEntity);
     liftEntities.grantWriteData(createEntity);
     liftEntities.grantReadWriteData(updateEntity);
-    liftEntities.grantWriteData(deleteEntity);
+    liftEntities.grantReadWriteData(deleteEntity);
+    liftEntities.grantWriteData(postConfirmation);
+    liftEntities.grantReadWriteData(preToken);
 
     const userPool = new cognito.UserPool(this, 'liftUserPool', {
       signInAliases: { email: true },
@@ -72,15 +88,20 @@ export class InfraStack extends cdk.Stack {
       passwordPolicy: {minLength: 8, requireLowercase: true, requireUppercase: true, requireDigits: true}
     });
 
+    userPool.addTrigger(cognito.UserPoolOperation.POST_CONFIRMATION, postConfirmation);
+    userPool.addTrigger(cognito.UserPoolOperation.PRE_TOKEN_GENERATION, preToken);
+
     const userPoolClient = userPool.addClient('liftUserPoolClient', {
        authFlows: { userSrp: true, userPassword: true} // passwords never traverse the network, secure authentication protocol.
     });
+    
 
     // prevents unauthroized access to api methods. Only authenticated users may access. Verification still required so users can only perform
     // actions on their own data.
     const auth = new apigateway.CognitoUserPoolsAuthorizer(this, 'liftAPIAuthorizer', {
       cognitoUserPools: [userPool]
-    });
+    });    
+      
 
     // api getway setup. allowOrigins should be adjusted for production to only allow the frontend domain.
     const api = new apigateway.RestApi(this, 'liftAPI', {
@@ -94,7 +115,6 @@ export class InfraStack extends cdk.Stack {
     // structure for api endpoints with integrations with lambda functions. Structure mirrors 
     // data schema.
     const users = api.root.addResource('user');
-    const user = users.addResource('{userId}');
     const workouts = api.root.addResource('workout');
     const workout = workouts.addResource('{workoutId}');
     const sets = api.root.addResource('set');
@@ -108,7 +128,7 @@ export class InfraStack extends cdk.Stack {
 
 
     let main = [users, workouts, sets, exercises];
-    let sub = [user, workout, set, exercise];
+    let sub = [workout, set, exercise];
 
     for (let resource of main) {
       resource.addMethod('GET', new apigateway.LambdaIntegration(getEntity), {authorizer: auth, authorizationType: apigateway.AuthorizationType.COGNITO});
@@ -121,7 +141,7 @@ export class InfraStack extends cdk.Stack {
       resource.addMethod('DELETE', new apigateway.LambdaIntegration(deleteEntity), {authorizer: auth, authorizationType: apigateway.AuthorizationType.COGNITO});
     }
 
-    // outputs to easily pass directly to the Next.js frontend config
+    // outputs to easily pass directly to the Next.js frontend config.
     new cdk.CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
     new cdk.CfnOutput(this, 'UserPoolClientId', { value: userPoolClient.userPoolClientId });
     new cdk.CfnOutput(this, 'ApiUrl', { value: api.url });
