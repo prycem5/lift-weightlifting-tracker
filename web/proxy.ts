@@ -9,10 +9,34 @@ note: function parameters will expect next server's NextRequest
 
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { Amplify } from "aws-amplify";
 import { fetchAuthSession } from "aws-amplify/auth";
 
-export default async (request: NextRequest) => { /* to be implemented. */
-    return null;
+Amplify.configure({
+  Auth: {
+    Cognito: {
+      userPoolId: process.env.NEXT_PUBLIC_USER_POOL_ID || "",
+      userPoolClientId: process.env.NEXT_PUBLIC_USER_POOL_CLIENT_ID || "",
+    },
+  },
+});
+
+export default async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname === "/") { return NextResponse.next(); }
+
+  try {
+    const session = await fetchAuthSession();
+    const hasAccessToken = Boolean(session?.tokens?.accessToken);
+
+    if (!hasAccessToken) { return NextResponse.redirect(new URL("/", request.url)); }
+
+    return NextResponse.next();
+  } catch (err) {
+    if (err instanceof Error) { console.log(err.message); } else { console.log("Unexpected error.", err) }
+    return NextResponse.redirect(new URL("/", request.url));
+  }
 }
 
 export const config = { /* excludes static files and includes any page routes or api calls. will be further filtered within function to target pages past the splash/login screen.*/
