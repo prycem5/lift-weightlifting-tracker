@@ -21,10 +21,10 @@ Amplify.configure({
   },
 });
 
-export default async function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname === "/") { return NextResponse.next(); }
+  if (pathname === "/" || pathname === "/pwa/login") { return NextResponse.next(); }
 
   try {
     const session = await fetchAuthSession();
@@ -35,7 +35,7 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next();
   } catch (err) {
     if (err instanceof Error) { console.log(err.message); } else { console.log("Unexpected error.", err) }
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL("/pwa/login", request.url));
   }
 }
 

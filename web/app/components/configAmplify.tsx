@@ -1,7 +1,9 @@
-'use client';
+"use client";
 
-import { Amplify } from 'aws-amplify';
-Amplify.configure({
+import { Amplify } from "aws-amplify";
+
+export const ConfigAmplify = () => {
+    Amplify.configure({
         Auth: {
             Cognito: {
                 userPoolId: process.env.NEXT_PUBLIC_USER_POOL_ID || "",
@@ -10,6 +12,5 @@ Amplify.configure({
         }
     });
 
-export const Config = () => {
     return null;
 }
