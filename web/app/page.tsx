@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PwaGate } from "./components/pwaGate";
+import { PwaGate } from "@/app/components/pwaGate";
 
 type OS = "iPhone" | "Android";
 

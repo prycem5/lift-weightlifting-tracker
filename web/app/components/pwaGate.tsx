@@ -34,20 +34,27 @@ export const PwaGate = () => {
         const isFullscreen: boolean = window.matchMedia('(display-mode: fullscreen)').matches;
         const isMinimalUI: boolean = window.matchMedia('(display-mode: minimal-ui)').matches;
         const isPWA = isStandalone || isFullscreen || isMinimalUI;
+        console.log({ isStandalone, isFullscreen, isMinimalUI, isPWA });
 
         const checkAuth = async () => {
             const result = await isAuthenticated();
-            if (isPWA) {
-                if (!result && window.location.pathname !== "/pwa/login") {
+            const onLoginPage = window.location.pathname === "/pwa/login";
+            if (!isPWA) {
+                router.push("/");
+                console.log("App is not running in PWA mode. Redirecting to /");
+                return;
+            }
+            if (result) {
+                if (onLoginPage) {
+                    router.push("/pwa/dashboard");
+                }
+            } else {
+                if (!onLoginPage) {
                     router.push("/pwa/login");
                     console.log("User is not authenticated. Redirecting to /pwa/login");
                 }
-            } else {
-                router.push("/");
-                console.log("App is not running in PWA mode. Redirecting to /");
             }
         }
-        
         checkAuth();
     }, [router]);
 
