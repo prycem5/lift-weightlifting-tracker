@@ -3,6 +3,7 @@
 import { PwaGate } from "@/app/components/pwaGate";
 import { signOut } from "aws-amplify/auth";
 import { useRouter } from "next/navigation";
+import { BottomNavBar } from "@/app/components/themed/bottomNav";
 
 export default function Dashboard() {
     const router = useRouter();
@@ -17,14 +18,19 @@ export default function Dashboard() {
         }
     }
 
-  return (
-    <>
-      <PwaGate />
-      <div className="min-h-screen pb-2">
-          <h1 className="text-5xl font-bold">Dashboard Page</h1>
-          <button onClick={() => handleSignOut()} className="hover:underline text-sm text-white">Sign Out</button>
-      </div>
-    </>
+    return (
+        <>
+            <PwaGate/>
+            <div className="min-h-screen pb-2 flex flex-col justify-between">
+                <div>
+                    <h1 className="text-5xl font-bold">Dashboard Page</h1>
+                    <button onClick={() => handleSignOut()} className="hover:underline text-sm text-white">
+                        Sign Out
+                    </button>
+                </div>
 
-  );
+                <BottomNavBar/>
+            </div>
+        </>
+    );
 }
