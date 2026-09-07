@@ -56,6 +56,8 @@ export const BottomNavBar = () => {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    // the interval exists only while a workout is active; cleanup prevents timers from
+    // continuing after the workout ends or the component unmounts.
     if (isWorkoutActive == true) {
       intervalRef.current = setInterval(() => {
         setElapsedSeconds((prev) => prev + 1);
@@ -114,6 +116,8 @@ export const BottomNavBar = () => {
   };
 
   const handleCenterButtonClick = () => {
+    // the center action changes meaning with workout state: start a session initially,
+    // then return to the home view while one is active.
     if (isWorkoutActive == true) {
       handleHomeNavigate();
     } else {

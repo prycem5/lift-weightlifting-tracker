@@ -28,6 +28,8 @@ export default function Home() {
   const [osType, setOsType] = useState<OS>("Android");
 
   useEffect(() => {
+    // device detection runs after hydration because navigator is only available in the
+    // browser. unknown platforms use the android instructions as the fallback.
     if (typeof navigator !== "undefined") {
       const platform = navigator.userAgent.toLowerCase();
       setOsType(platform.includes("iphone") ? "iPhone" : "Android");

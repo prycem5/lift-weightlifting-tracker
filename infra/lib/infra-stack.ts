@@ -15,7 +15,8 @@ export class InfraStack extends cdk.Stack {
 
     // The code that defines your stack goes here
 
-    // single liftEntites table with combination key allows for flexible data modeling. 
+    // one composite-key table lets each entity type use the same storage while retaining
+    // efficient ownership and collection queries. see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/HowItWorks.CoreComponents.html.
     const liftEntities = new dynamodb.Table(this, 'liftEntities', {
       tableName: 'liftEntities',
       partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING },
@@ -23,15 +24,17 @@ export class InfraStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST, // most cost-effective for variable workloads.
     });
 
-    liftEntities.addGlobalSecondaryIndex({ /* for doing mass queries of a 
-      single entity type without use for scan*/
+    // the gsi supports collection and id lookups for shared exercises without scanning
+    // the whole table. see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html.
+    liftEntities.addGlobalSecondaryIndex({
       indexName: 'liftEntitiesGSI',
       partitionKey: { name: 'entityType', type: dynamodb.AttributeType.STRING },
       sortKey: { name: 'entityId', type: dynamodb.AttributeType.STRING },
       projectionType: dynamodb.ProjectionType.ALL
     });
 
-    // pointers to code defined in /lambda, which will be integrated within the api gateway and cognito.
+    // these functions package the handlers in /lambda for api gateway and cognito; each
+    // function receives only the table permissions required by its operation.
     const getEntity = new lambda.Function(this, 'getEntity', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'getEntity.handler',
@@ -96,14 +99,16 @@ export class InfraStack extends cdk.Stack {
     });
     
 
-    // prevents unauthroized access to api methods. Only authenticated users may access. Verification still required so users can only perform
-    // actions on their own data.
+    // api gateway rejects requests without a valid cognito token before invoking a handler.
+    // the handlers still enforce ownership because authentication alone does not identify
+    // which resource a caller is allowed to modify.
     const auth = new apigateway.CognitoUserPoolsAuthorizer(this, 'liftAPIAuthorizer', {
       cognitoUserPools: [userPool]
     });    
       
 
-    // api getway setup. allowOrigins should be adjusted for production to only allow the frontend domain.
+    // cors is open during development; restrict alloworigins to the deployed frontend
+    // domain before production. see https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html.
     const api = new apigateway.RestApi(this, 'liftAPI', {
         restApiName: 'liftAPI',
         defaultCorsPreflightOptions: { // creates universal rules between all endpoints, determining how the api can be accessed.
@@ -112,8 +117,8 @@ export class InfraStack extends cdk.Stack {
       },
     });
 
-    // structure for api endpoints with integrations with lambda functions. Structure mirrors 
-    // data schema.
+    // endpoint paths mirror the entity schema. collection resources support get/post,
+    // while item resources support get/put/delete and receive an id in the path.
     const users = api.root.addResource('user');
     const workouts = api.root.addResource('workout');
     const workout = workouts.addResource('{workoutId}');

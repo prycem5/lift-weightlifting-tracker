@@ -17,6 +17,8 @@ export const LoginForm = () => {
     const [confirmPasswordVisbility, setConfirmPasswordVisibility] = useState(false);
     const router = useRouter();
 
+    // cognito returns a nextStep instead of completing every operation immediately.
+    // buttonType is the small state machine that selects the fields and handler for that step.
     const handleSignIn = async () => {
         try {
             const { isSignedIn, nextStep } = await signIn({
@@ -145,6 +147,7 @@ export const LoginForm = () => {
     }
 
     const handleButton = async () => {
+        // prevent duplicate cognito requests while the current step is in flight.
         if (isLoading == true) {
             return;
         } else {
