@@ -1,7 +1,7 @@
 "use client";
 
-import { PwaGate } from "@/app/components/pwaGate";
-import { LoginForm } from "@/app/components/loginForm";
+import { PwaGate } from "@/components/pwaGate";
+import { LoginForm } from "@/components/loginForm";
 
 export default function LoginPage() {
   return (

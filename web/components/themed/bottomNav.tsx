@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { User, Plus, Home, History, ChevronUp, ChevronDown } from "lucide-react";
-import { ConfirmModal } from "@/app/components/themed/confirmModal";
+import { ConfirmModal } from "@/components/themed/confirmModal";
 
 type Theme = "dark" | "light";
 

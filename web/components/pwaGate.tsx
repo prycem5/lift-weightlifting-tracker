@@ -42,22 +42,26 @@ export const PwaGate = () => {
 
         const checkAuth = async () => {
             const result = await isAuthenticated();
-            const onLoginPage = window.location.pathname === "/pwa/login";
+            const currentPath = window.location.pathname;
+            const onLoginPage = currentPath === "/login";
+            const onPublicPage = currentPath === "/";
             // the splash page is the browser entry point; the authenticated app itself is
             // intentionally limited to an installed PWA experience.
             if (!isPWA) {
-                router.push("/");
+                if (!onPublicPage) {
+                    router.push("/");
+                }
                 console.log("App is not running in PWA mode. Redirecting to /");
                 return;
             }
             if (result) {
-                if (onLoginPage) {
-                    router.push("/pwa/dashboard");
+                if (onLoginPage || onPublicPage) {
+                    router.push("/dashboard");
                 }
             } else {
                 if (!onLoginPage) {
-                    router.push("/pwa/login");
-                    console.log("User is not authenticated. Redirecting to /pwa/login");
+                    router.push("/login");
+                    console.log("User is not authenticated. Redirecting to /login");
                 }
             }
         }

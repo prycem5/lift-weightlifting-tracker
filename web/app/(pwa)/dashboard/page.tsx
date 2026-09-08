@@ -1,16 +1,17 @@
 "use client";
 
-import { PwaGate } from "@/app/components/pwaGate";
+import { PwaGate } from "@/components/pwaGate";
 import { signOut } from "aws-amplify/auth";
 import { useRouter } from "next/navigation";
-import { BottomNavBar } from "@/app/components/themed/bottomNav";
+import { BottomNavBar } from "@/components/themed/bottomNav";
+import { ExerciseListTester } from "@/components/exerciseListTester";
 
 export default function Dashboard() {
     const router = useRouter();
     const handleSignOut = async () => {
         try {
             await signOut();
-            router.push("/pwa/login");
+            router.push("/login");
         } catch (error) {
             if (error instanceof Error) {
                 console.log("Error signing out: " + error.message);
@@ -27,6 +28,8 @@ export default function Dashboard() {
                     <button onClick={() => handleSignOut()} className="hover:underline text-sm text-white">
                         Sign Out
                     </button>
+                    <ExerciseListTester/>
+
                 </div>
 
                 <BottomNavBar/>

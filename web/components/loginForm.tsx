@@ -28,7 +28,7 @@ export const LoginForm = () => {
 
             if (isSignedIn == true) {
                 setSysMessage("Sign in successful! Redirecting...");
-                router.push("/pwa/dashboard");
+                router.push("/dashboard");
             } else if (nextStep.signInStep == "CONFIRM_SIGN_UP") {
                 setSysMessage("A confirmation code has been sent to " + email + ".");
                 setButtonType("Verify");
@@ -137,7 +137,7 @@ export const LoginForm = () => {
             const { isSignedIn } = await autoSignIn();
             if (isSignedIn == true) {
                 setSysMessage("Sign in successful! Redirecting..."); //later, user will be redirected.
-                router.push("/pwa/dashboard");
+                router.push("/dashboard");
             }
         } catch (error) {
             if (error instanceof Error) {
