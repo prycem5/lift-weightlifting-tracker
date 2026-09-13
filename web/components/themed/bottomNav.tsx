@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { User, Plus, Home, History, ChevronUp, ChevronDown } from "lucide-react";
 import { ConfirmModal } from "@/components/themed/confirmModal";
+import { SearchBar } from "@/components/themed/searchBar";
 
 type Theme = "dark" | "light";
 
@@ -157,6 +158,7 @@ export const BottomNavBar = () => {
 
             {isBarExpanded && (
               <div className={`mt-3 pt-3 border-t ${t.barBorder} space-y-3`}>
+                <SearchBar onSelectExercise={() => { return null }} />
                 <div className="flex items-center gap-2">
                   <button
                     type="button"

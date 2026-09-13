@@ -4,7 +4,7 @@ import { PwaGate } from "@/components/pwaGate";
 import { signOut } from "aws-amplify/auth";
 import { useRouter } from "next/navigation";
 import { BottomNavBar } from "@/components/themed/bottomNav";
-import { ExerciseListTester } from "@/components/exerciseListTester";
+import { SearchBar } from "@/components/themed/searchBar";
 
 export default function Dashboard() {
     const router = useRouter();
@@ -28,7 +28,6 @@ export default function Dashboard() {
                     <button onClick={() => handleSignOut()} className="hover:underline text-sm text-white">
                         Sign Out
                     </button>
-                    <ExerciseListTester/>
 
                 </div>
 
