@@ -124,6 +124,24 @@ export class InfraStack extends cdk.Stack {
       },
     });
 
+    api.addGatewayResponse('Default4XX', {
+      type: apigateway.ResponseType.DEFAULT_4XX,
+      responseHeaders: {
+        'Access-Control-Allow-Origin': "'*'",
+        'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+        'Access-Control-Allow-Methods': "'OPTIONS,GET,POST,PUT,DELETE'",
+      },
+    });
+
+    api.addGatewayResponse('Default5XX', {
+      type: apigateway.ResponseType.DEFAULT_5XX,
+      responseHeaders: {
+        'Access-Control-Allow-Origin': "'*'",
+        'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+        'Access-Control-Allow-Methods': "'OPTIONS,GET,POST,PUT,DELETE'",
+      },
+    });
+
     // endpoint paths mirror the entity schema. collection resources support get/post,
     // while item resources support get/put/delete and receive an id in the path.
     const users = api.root.addResource('user');

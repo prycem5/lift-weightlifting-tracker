@@ -22,7 +22,7 @@ export const readRequest = async <T>(resource: string): Promise<T> => { // retri
         throw new Error(`Error fetching auth session: ${error}`);
     }
 
-    const url = `${process.env.NEXT_PUBLIC_LIFT_ENDPOINT}${resource}`;
+    const url = `${process.env.NEXT_PUBLIC_LIFT_ENDPOINT}/${resource}`;
     const headers = {
         "Content-Type": "application/json",
         "Authorization": idToken,
@@ -56,7 +56,7 @@ export const createRequest = async <T>(resource: string, body: payload): Promise
         throw new Error(`Error fetching auth session: ${error}`);
     }
 
-    const url = `${process.env.NEXT_PUBLIC_LIFT_ENDPOINT}${resource}`;
+    const url = `${process.env.NEXT_PUBLIC_LIFT_ENDPOINT}/${resource}`;
     const headers = {
         "Content-Type": "application/json",
         "Authorization": idToken,
@@ -90,7 +90,7 @@ export const updateRequest = async <T>(resource: string, body: payload): Promise
         throw new Error(`Error fetching auth session: ${error}`);
     }
 
-    const url = `${process.env.NEXT_PUBLIC_LIFT_ENDPOINT}${resource}`;
+    const url = `${process.env.NEXT_PUBLIC_LIFT_ENDPOINT}/${resource}`;
     const headers = {
         "Content-Type": "application/json",
         "Authorization": idToken,
@@ -124,7 +124,7 @@ export const deleteRequest = async (resource: string): Promise<boolean> => { // 
         throw new Error(`Error fetching auth session: ${error}`);
     }
 
-    const url = `${process.env.NEXT_PUBLIC_LIFT_ENDPOINT}${resource}`;
+    const url = `${process.env.NEXT_PUBLIC_LIFT_ENDPOINT}/${resource}`;
     const headers = {
         "Content-Type": "application/json",
         "Authorization": idToken,

@@ -17,7 +17,8 @@ export const SearchBar = ({ onSelectExercise }: SearchBarProps) => {
     const [isFocused, setIsFocused] = useState(false);
 
     useEffect(() => {
-        const loadExercises = async () => {
+        const loadExercises = async () => { /*On load, retrieve the current exercise list
+            from backend into an array.*/
             setIsLoading(true);
             try {
                 const data = await readRequest<Exercise[]>("exercise");
@@ -31,16 +32,15 @@ export const SearchBar = ({ onSelectExercise }: SearchBarProps) => {
         loadExercises();
     }, []);
 
-    // Compute active filtered items dynamically on every input/filter change
-    const filterExercises = (keyword: string) => {
-        keyword = input.trim().toLowerCase();
+    const filterExercises = (keyword :string) => {
+        keyword = keyword.trim().toLowerCase();
         setFiltered(exercises.filter((exercise) => {
             return exercise.name.toLowerCase().includes(keyword);
         }));
     }
 
     return (
-        <div className="relative w-full max-w-lg font-sans">
+        <div className="relative w-full font-sans">
             {/* Search Input Box */}
             <div className="relative flex items-center w-full">
                 <Search size={18} className="absolute left-3.5 text-zinc-400 pointer-events-none" />
@@ -70,7 +70,7 @@ export const SearchBar = ({ onSelectExercise }: SearchBarProps) => {
 
             {/* Results Dropdown */}
             {isFocused && (
-                <div className=" z-50 mt-2 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden max-h-72 flex flex-col">
+                <div className="relative z-50 mt-2 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden max-h-72 flex flex-col">
                     {isLoading ? (
                         <div className="flex items-center justify-center p-6 gap-2 text-xs text-zinc-500">
                             <p>...</p>

@@ -6,7 +6,6 @@ interface LiftEntity {
 
 export interface Workout extends LiftEntity {
     entityType: "workout";
-
     timestamp: string;
     duration: number;
 
@@ -23,7 +22,6 @@ export interface Exercise extends LiftEntity {
 export interface Set extends LiftEntity {
     entityType: "set";
     workoutId: string;
-
     exerciseId: string;
     reps: number;
     weight: number;
@@ -33,7 +31,6 @@ export interface Set extends LiftEntity {
 export interface PR extends LiftEntity {
     entityType: "pr";
     exerciseId: string;
-
     weight: number;
 
 }
