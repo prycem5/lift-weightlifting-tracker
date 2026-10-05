@@ -4,6 +4,8 @@ LIFT is a mobile-first Progressive Web App (PWA) engineered for logging resistan
 
 The application enforces an installed mobile environment: standard desktop and mobile browser sessions land on an onboarding splash page with platform-specific installation instructions and a dynamic QR code. Once installed to a mobile home screen, the application unlocks the full tracking dashboard. Active workouts are buffered locally via IndexedDB (Dexie.js) to protect against data loss from accidental browser refreshes, background suspensions, or device restarts before persisting to AWS.
 
+Live Demo: [LIFT](https://lift-weightlifting-tracker.vercel.app/)
+
 ---
 
 ## Architecture Overview
