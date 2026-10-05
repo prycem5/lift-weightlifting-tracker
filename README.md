@@ -26,7 +26,7 @@ The repository is structured as a monorepo consisting of two primary packages:
     ├── utils/api.ts        # Authenticated REST API client
     ├── utils/cache.ts      # IndexedDB / Dexie offline storage
     └── README.md           # Frontend setup, PWA config, and v1.1 design decisions
-
+```
 ## Configuration
  
 **Backend (`infra/.env.local`)**
