@@ -116,6 +116,7 @@ export class InfraStack extends cdk.Stack {
     // domain before production. see https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html.
     const api = new apigateway.RestApi(this, 'liftAPI', {
       restApiName: 'liftAPI',
+      deployOptions: {stageName : "prod"},
       defaultCorsPreflightOptions: { // creates universal rules between all endpoints, determining how the api can be accessed.
         allowOrigins: [prod],
         allowMethods: apigateway.Cors.ALL_METHODS,
