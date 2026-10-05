@@ -27,7 +27,7 @@ export const readRequest = async <T>(resource: string): Promise<T> => { // retri
     const url = `${process.env.NEXT_PUBLIC_LIFT_ENDPOINT}/${resource}`;
     const headers = {
         "Content-Type": "application/json",
-        "Authorization": idToken,
+        "Authorization": `Bearer ${idToken}`,
     };
 
     let data;
@@ -61,7 +61,7 @@ export const createRequest = async <T>(resource: string, body: payload): Promise
     const url = `${process.env.NEXT_PUBLIC_LIFT_ENDPOINT}/${resource}`;
     const headers = {
         "Content-Type": "application/json",
-        "Authorization": idToken,
+        "Authorization": `Bearer ${idToken}`,
     };
 
     let data;
@@ -95,7 +95,7 @@ export const updateRequest = async <T>(resource: string, body: payload): Promise
     const url = `${process.env.NEXT_PUBLIC_LIFT_ENDPOINT}/${resource}`;
     const headers = {
         "Content-Type": "application/json",
-        "Authorization": idToken,
+        "Authorization": `Bearer ${idToken}`,
     };
 
     let data;
@@ -129,7 +129,7 @@ export const deleteRequest = async (resource: string): Promise<boolean> => { // 
     const url = `${process.env.NEXT_PUBLIC_LIFT_ENDPOINT}/${resource}`;
     const headers = {
         "Content-Type": "application/json",
-        "Authorization": idToken,
+        "Authorization": `Bearer ${idToken}`,
     };
 
     let data;
