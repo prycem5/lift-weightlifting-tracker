@@ -118,7 +118,7 @@ export class InfraStack extends cdk.Stack {
       restApiName: 'liftAPI',
       deployOptions: {stageName : "prod"},
       defaultCorsPreflightOptions: { // creates universal rules between all endpoints, determining how the api can be accessed.
-        allowOrigins: [prod],
+        allowOrigins: [prod, "http://localhost:3000"],
         allowMethods: apigateway.Cors.ALL_METHODS,
         allowHeaders: [
           'Content-Type',
