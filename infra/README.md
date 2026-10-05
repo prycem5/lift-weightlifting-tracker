@@ -1,110 +1,82 @@
-# Stack Overview
-
+# Backend / infrastructure (`infra/`)
+ 
+Everything is defined in one CDK stack (`lib/infra-stack.ts`, stack name `InfraStack`) and is fully serverless.
+ 
 | Service | Role |
 |---|---|
-| AWS DynamoDB | NoSQL database |
-| AWS Lambda | Serverless CRUD functions and Cognito triggers |
-| AWS Cognito | Authentication and user management |
-| AWS API Gateway | REST API and request authorization |
-| AWS CDK | Infrastructure as code (`infra-stack.ts`) |
-
----
-
-## DynamoDB
-
-A single table (`liftEntities`) stores all entities using a **composite key design**. Partition key allows multiple entity types (users, workouts, sets, exercises) to coexist in one table without a rigid schema.
-
-**User entity key design:**
-The `user` entity is a special case within the schema. Since exactly one `user` item can ever exist under a given `PK` (the Cognito `sub`), its `SK` is simply the fixed string `"user"`, not a generated UUID. This avoids a bootstrapping problem (there's no HTTP response path for a server side Cognito trigger to hand a client generated UUID back to the frontend) and keeps the item self documenting, since `SK` alone tells you what kind of entity it is.
-
-**Why DynamoDB:**
-- NoSQL's flexible schema avoids costly restructuring as new entity types are introduced (e.g. user-generated exercises planned post-MVP).
-- `PAY_PER_REQUEST` billing scales cost directly with usage, making it appropriate for a variable, early-stage workload.
-- Pairs naturally with Lambda in a fully serverless architecture, keeping operational overhead low.
-
----
-
-## Lambda
-
-Six functions handle data operations and the Cognito auth lifecycle, each scoped to a single responsibility and granted only the IAM permissions it needs:
-
-| Function | Trigger | DynamoDB Permission |
-|---|---|---|
-| `getEntity` | API Gateway GET | Read |
-| `createEntity` | API Gateway POST | Write |
-| `updateEntity` | API Gateway PUT | Read + Write |
-| `deleteEntity` | API Gateway DELETE | Read + Write |
-| `postConfirmation` | Cognito Post Confirmation | Write |
-| `preToken` | Cognito Pre Token Generation | Read + Write |
-
-`getEntity`, `updateEntity`, and `deleteEntity` all special case `entityType === "user"`, since the user entity has no path parameter, no UUID, and no mass retrieval concept the way `workout`/`set`/`exercise` do. `deleteEntity` deliberately excludes `"user"` from its allow list entirely. Account deletion is out of scope for MVP (see Future Considerations).
-
-Each function receives the `TABLE_NAME` via environment variable. `createEntity`, `updateEntity`, and `deleteEntity` additionally receive an `ADMIN_ID`, used to gate exercise creation and modification to admin users. General users cannot create or modify exercises in the current MVP.
-
-**Why Lambda:**
-- Serverless functions eliminate the need to manage or provision infrastructure for what are otherwise simple, stateless queries.
-- Per-invocation pricing is cost-effective at this scale.
-- Least-privilege IAM grants per function reduce the blast radius of any potential misuse.
-
----
-
+| DynamoDB | Single-table storage for all entities |
+| Lambda (Node.js 20) | CRUD handlers and Cognito triggers |
+| Cognito | Sign-up, email verification, sign-in, token issuance |
+| API Gateway (REST) | HTTP surface and request authorization |
+| CDK | Infrastructure as code |
+ 
+## DynamoDB: single table `liftEntities`
+ 
+Billing mode is `PAY_PER_REQUEST`. Primary key is `PK` (string) + `SK` (string). User-owned items live in the user's partition (`PK` = Cognito `sub`); the shared exercise catalog lives in per-muscle-group partitions.
+ 
+| Entity | PK | SK | Other attributes |
+|---|---|---|---|
+| `user` | Cognito `sub` | `user` (fixed) | `email`, `metricSystem`, `darkMode` |
+| `workout` | `sub` | `workout#<ISO timestamp>` | `timestamp`, `duration` |
+| `set` | `sub` | `workout#<timestamp>#set#<uuid>#<setIndex>` | `exerciseId`, `reps`, `weight` |
+| `pr` | `sub` | `pr#<exercise uuid>` | `exerciseId`, `weight` |
+| `exercise` | muscle group (e.g. `Chest`) | `exercise#<uuid>` | `entityType: "exercise"`, `entityId` (= `SK`), `name`, `equipmentType` |
+ 
+**Global secondary index `liftEntitiesGSI`:** partition `entityType`, sort `entityId`, projecting all attributes. Only exercise items carry those attributes, so it is effectively a *sparse index* over the exercise catalog.
+ 
+**Access patterns**
+ 
+| Need | Query |
+|---|---|
+| Current user's profile | `GetItem(PK=sub, SK="user")` |
+| All of a user's workouts | `Query PK=sub, begins_with(SK, "workout#")`, filtered to drop `#set#` items |
+| Sets for one workout | `Query PK=sub, begins_with(SK, "workout#<ts>#set#")` |
+| All of a user's PRs | `Query PK=sub, begins_with(SK, "pr#")` |
+| Whole exercise catalog | GSI: `entityType = "exercise"` |
+| One exercise by id | GSI: `entityId = "exercise#<uuid>"` (needed because the real `PK` is the muscle group) |
+ 
+Because sets share the `workout#<ts>` prefix, a workout and all of its sets are co-located and ordered, at the cost of the workout collection query needing to filter out set items.
+ 
+## Lambda functions
+ 
+Six single-purpose functions, each granted only the table permissions it needs:
+ 
+| Function | Invoked by | Table access | Notes |
+|---|---|---|---|
+| `getEntity` | `GET` on any resource | read | Single-item and collection reads; special-cases `user` and `exercise`. |
+| `createEntity` | `POST` | write | Builds `PK`/`SK` per entity; uses `attribute_not_exists(SK)`. |
+| `updateEntity` | `PUT` | read + write | Verifies the item exists in the caller's partition, then applies an allow-listed update. |
+| `deleteEntity` | `DELETE` | read + write | `user` is not deletable (account deletion deferred). |
+| `postConfirmation` | Cognito Post Confirmation | write | Creates the `user` item. |
+| `preToken` | Cognito Pre Token Generation | read + write | Syncs email changes into DynamoDB. |
+ 
+Shared behavior in the CRUD handlers:
+ 
+- **Identity comes from the token, never the client.** The partition key is always `event.requestContext.authorizer.claims.sub`, so a caller can only address their own partition. This is what enforces ownership; the API accepts only the *ids within* the caller's partition.
+- **One handler per verb.** The entity type is derived from the resource path (`event.resource.split('/')[1]`).
+- **Attribute allow-lists** (`lambda/helpers/validateAttributes.js`) reject any attribute not explicitly writable, so clients cannot overwrite key fields (`PK`, `SK`, `entityType`, ...) or inject unknown schema. Workouts are create-only today; users can only change `metricSystem` and `darkMode`.
+- **Admin-only exercises.** Creating, updating, and deleting `exercise` items requires `sub === ADMIN_ID`.
+- **CORS:** handlers echo the request origin only if it equals `PRODUCTION_DOMAIN`, otherwise `http://localhost:3000`.
+**Cognito triggers**
+ 
+- `postConfirmation`: creates `{PK: sub, SK: "user", email, metricSystem: false, darkMode: false}` with `attribute_not_exists(SK)`. Cognito retries triggers, so the conditional write makes this idempotent; a `ConditionalCheckFailedException` is treated as success. **Any other error is rethrown** because the `user` item is a hard dependency for the app and a missing one should not pass silently (this *fails closed*).
+- `preToken`: on every token issuance, compares the Cognito email with the stored one and updates DynamoDB if they differ. Every error is caught and logged: this is best-effort reconciliation that should never block sign-in (this *fails open*).
 ## Cognito
-
-Handles the full authentication lifecycle: account creation, email verification, sign-in, and token issuance (via a `liftUserPool`).
-
-**Configuration:**
-- Sign-in via email with self sign-up enabled.
-- Automatic email verification on registration.
-- Password policy enforcing minimum length, mixed case, and digits.
-- Auth flow uses **Secure Remote Password (SRP)**, meaning passwords are never transmitted over the network during authentication.
-
-**Why Cognito:**
-- Offloads the full auth flow (OTP, verification, token management) that would otherwise require significant custom backend work.
-- Scales to handle user growth without configuration changes.
-- Integrates directly with API Gateway as a user pool authorizer.
-
-### Cognito Triggers
-
-Two Lambda triggers, wired via `userPool.addTrigger(...)`, keep DynamoDB in sync with the Cognito user lifecycle:
-
-**`postConfirmation`** runs once, right after a user confirms their account. It creates the corresponding `user` item in DynamoDB (`PK = sub`, `SK = "user"`), with default attributes (`metricSystem: false`, `darkMode: false`). The write uses `ConditionExpression: "attribute_not_exists(SK)"` to stay idempotent, since Cognito retries a trigger up to three times if it doesn't get a timely response. On a `ConditionalCheckFailedException`, the handler treats the retry as a harmless no-op. Any other error is rethrown, forcing Cognito to retry, since the `user` item is a hard dependency for nearly every other operation in the app and a missing one should not be allowed to pass silently.
-
-**`preToken`** runs on every token issuance (login and refresh) and reconciles the user's email between Cognito and DynamoDB, in case it was changed on the Cognito side. Unlike `postConfirmation`, this trigger fails open: any error is caught and logged rather than thrown, since this is a best effort reconciliation and should never block a user from getting a token.
-
----
-
+ 
+- User pool `liftUserPool`: email sign-in, self sign-up, auto-verified email, password policy (min 8, upper, lower, digit).
+- App client enables `userSrp` and `userPassword` auth flows. The frontend uses Amplify's default SRP flow, in which the password is never sent over the network.
 ## API Gateway
-
-A REST API (`liftAPI`) exposes Lambda functions to the frontend and enforces authorization on every endpoint via a **Cognito User Pool Authorizer**.
-
-**Endpoint structure** (mirrors the data schema):
-
-```
-/user
-/workout
-  /{workoutId}
-/set
-  /{setId}
-/exercise
-  /{exerciseId}
-```
-
-Collection endpoints (`/user`, `/workout`, `/set`, `/exercise`) support `GET` and `POST`. Individual resource endpoints (`/workout/{workoutId}`, `/set/{setId}`, `/exercise/{exerciseId}`) support `GET`, `PUT`, and `DELETE`. `/user` intentionally has no `{userId}` sub resource, since `PK` and `SK` for a user item are always derived from the caller's own auth claims, never from a client supplied path parameter.
-
-**Authorization:**
-- Every method requires a valid Cognito ID token to prevent unregistered users from accessing the API.
-- CORS is currently open (`ALL_ORIGINS`) and is flagged for tightening to the frontend domain before production.
-
-**Why API Gateway:**
-- Provides the bridge between the Next.js frontend and Lambda, without requiring a persistent server.
-- Native Cognito authorizer integration means auth is enforced at the gateway layer before any Lambda function executes.
-
----
-
-## Future Considerations
-
-- **Account deletion:** Cognito has no native trigger for user deletion. Full account removal will require a dedicated orchestration Lambda calling `AdminDeleteUser` alongside a cascade delete of the user's `workout`/`set` items, likely a Step Function or similar rather than a simple CRUD extension. Deferred until after MVP.
-- **S3:** evaluated for equipment icons (dumbbell, barbell, kettlebell, cable) but deferred in favor of bundling a small, fixed set of static images in the frontend. The image set is small and rarely changes, so the added infrastructure wasn't worth the cost or setup time at this scale. Object storage will be picked up on a separate freelance project with a genuinely dynamic asset use case.
-- **CI/CD:** deferred for the same reason. As a solo developer with no team to coordinate deploys with, a manually run `cdk deploy` carries little risk at this stage, and setting up a pipeline now would add limited learning value without a team or release cadence to justify it.
-- **User-generated exercises:** currently, exercises are admin created only. A future resource (`/user/exercise` or similar) is anticipated.
-- **CORS:** `allowOrigins` must be restricted to the production frontend domain before deployment.
+ 
+REST API `liftAPI`, stage `prod`, with a **Cognito User Pool authorizer on every method**: unauthenticated requests are rejected before any Lambda runs. Default 4XX/5XX gateway responses carry CORS headers so browser clients can read errors.
+ 
+| Resource | Methods |
+|---|---|
+| `/user` | `GET`, `POST`\*, `PUT` |
+| `/workout`, `/set`, `/exercise`, `/pr` | `GET`, `POST` |
+| `/workout/{workoutId}`, `/set/{setId}`, `/exercise/{exerciseId}`, `/pr/{prId}` | `GET`, `PUT`, `DELETE` |
+ 
+\* `POST /user` is routed but `createEntity` rejects `user`; users are created only by the Cognito trigger. `/user` deliberately has no `{userId}` child: user keys come solely from the token.
+ 
+Sets have a composite identity, so item-level `set` calls take query parameters in addition to the path id: `?workoutId=<workout#timestamp>&setIndex=<n>`.
+ 
+`CfnOutput`s (`UserPoolId`, `UserPoolClientId`, `ApiUrl`) feed straight into the frontend's `NEXT_PUBLIC_*` variables.

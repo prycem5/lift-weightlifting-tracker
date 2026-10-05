@@ -9,6 +9,7 @@ import { Construct } from 'constructs';
 
 dotenv.config({ path: './.env.local' });
 const prod = process.env.PRODUCTION_DOMAIN || "";
+const admin = process.env.ADMIN_ID || "";
 
 export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -27,6 +28,7 @@ export class InfraStack extends cdk.Stack {
     const environment = {
       TABLE_NAME: liftEntities.tableName,
       PRODUCTION_DOMAIN: prod,
+      ADMIN_ID: admin
     };
 
     // the gsi supports collection and id lookups for shared exercises without scanning
