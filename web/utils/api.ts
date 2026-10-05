@@ -4,10 +4,12 @@ import { fetchAuthSession } from "aws-amplify/auth";
 
 interface payload {
     attributes: Record<string, any>;
-    entityType?: string;
     muscleGroup?: string;
+    entityType?: string;
     workoutId?: string;
     exerciseId?: string;
+    setIndex?: number;
+    timestamp?: string
 }
 
 export const readRequest = async <T>(resource: string): Promise<T> => { // retrieves entity data from api.

@@ -2,6 +2,8 @@
 
 import { PwaGate } from "@/components/pwaGate";
 import { LoginForm } from "@/components/loginForm";
+import Image from "next/image";
+
 
 export default function LoginPage() {
   return (
@@ -9,8 +11,9 @@ export default function LoginPage() {
       <PwaGate />
       <div className="flex flex-col items-center justify-center min-h-screen pb-2">
         <div className="flex flex-col items-center justify-center pb-5">
-          <div className="rounded-md bg-black w-60 h-50 mb-5"></div>
-          <h1 className="text-5xl font-bold">LIFT</h1>
+          <div className="relative h-50 w-50">
+            <Image src="/icon.png" alt="LIFT Logo" fill className="object-contain" priority />
+          </div>
           <p className="mt-4 text-lg">Let's get to work.</p>
         </div>
         <LoginForm />

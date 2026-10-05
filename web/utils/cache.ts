@@ -16,8 +16,20 @@ export const saveActiveSet = async (setData: Omit<ActiveSet, "localId">): Promis
 };
 
 // Retrieve all sets logged for the current workout
-export const getActiveSets = async (workoutId: string): Promise<ActiveSet[]> => {
-  return await db.activeSets.where("workoutId").equals(workoutId).toArray();
+export const getActiveSets = async (): Promise<ActiveSet[]> => {
+  return await db.activeSets.toArray();
+};
+
+// Updating active set information
+export const updateActiveSet = async (
+  localId: number,
+  changes: Partial<ActiveSet>
+): Promise<number> => {
+  return await db.activeSets.update(localId, changes);
+};
+
+export const deleteActiveSet = async (localId: number): Promise<void> => {
+  await db.activeSets.delete(localId);
 };
 
 // Clear cached session after syncing to DynamoDB via API Gateway or canceling

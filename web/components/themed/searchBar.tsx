@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { readRequest } from "@/utils/api";
 import { Exercise } from "@/types/liftEntities";
 import { Search, X} from "lucide-react";
 
 type SearchBarProps = {
-    onSelectExercise: () => void;
+    readonly onSelectExercise: (exercise: Exercise) => void;
 };
 
 export const SearchBar = ({ onSelectExercise }: SearchBarProps) => {
@@ -37,6 +37,12 @@ export const SearchBar = ({ onSelectExercise }: SearchBarProps) => {
         setFiltered(exercises.filter((exercise) => {
             return exercise.name.toLowerCase().includes(keyword);
         }));
+    }
+
+    const handleSelectExercise = (exercise: Exercise) => {
+        onSelectExercise(exercise);
+        setInput("");
+        setIsFocused(false);
     }
 
     return (
@@ -71,7 +77,7 @@ export const SearchBar = ({ onSelectExercise }: SearchBarProps) => {
             {/* Results Dropdown */}
             {isFocused && (
                 <div className="relative z-50 mt-2 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden max-h-72 flex flex-col">
-                    {isLoading ? (
+                    {(isLoading || input == "") ? (
                         <div className="flex items-center justify-center p-6 gap-2 text-xs text-zinc-500">
                             <p>...</p>
                         </div>
@@ -81,7 +87,7 @@ export const SearchBar = ({ onSelectExercise }: SearchBarProps) => {
                                 <li
                                     key={exercise.entityId || exercise.SK || exercise.name}
                                     className="p-3 hover:bg-zinc-800/50 cursor-pointer transition-colors text-left"
-                                    onClick={() => {onSelectExercise(); setInput(""); setIsFocused(false)}}
+                                    onClick={() => {handleSelectExercise(exercise)}}
                                 >
                                     <div className="flex items-center justify-between gap-2">
                                         <p className="text-sm font-medium text-zinc-100">

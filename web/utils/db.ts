@@ -7,6 +7,7 @@ export interface ActiveWorkout extends Workout{
 
 export interface ActiveSet extends Set {
     localId?: number;
+    exerciseName: string;
 }
 
 export const db = new Dexie("LiftCache") as Dexie & { /* creates local, non
@@ -18,5 +19,5 @@ export const db = new Dexie("LiftCache") as Dexie & { /* creates local, non
 
 db.version(1).stores({
     activeWorkout: "&localId",
-    activeSets: "++localId, workoutId, exerciseId"
+    activeSets: "++localId, exerciseId"
 })

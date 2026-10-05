@@ -8,6 +8,7 @@ import { Construct } from 'constructs';
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 dotenv.config({ path: './.env.local' });
+const prod = process.env.PRODUCTION_DOMAIN || "";
 
 export class InfraStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -112,7 +113,7 @@ export class InfraStack extends cdk.Stack {
     const api = new apigateway.RestApi(this, 'liftAPI', {
       restApiName: 'liftAPI',
       defaultCorsPreflightOptions: { // creates universal rules between all endpoints, determining how the api can be accessed.
-        allowOrigins: apigateway.Cors.ALL_ORIGINS, // ADJUST FOR PRODUCTION. 
+        allowOrigins: [prod],
         allowMethods: apigateway.Cors.ALL_METHODS,
         allowHeaders: [
           'Content-Type',
@@ -127,7 +128,7 @@ export class InfraStack extends cdk.Stack {
     api.addGatewayResponse('Default4XX', {
       type: apigateway.ResponseType.DEFAULT_4XX,
       responseHeaders: {
-        'Access-Control-Allow-Origin': "'*'",
+        'Access-Control-Allow-Origin': `${prod}`,
         'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
         'Access-Control-Allow-Methods': "'OPTIONS,GET,POST,PUT,DELETE'",
       },
@@ -136,7 +137,7 @@ export class InfraStack extends cdk.Stack {
     api.addGatewayResponse('Default5XX', {
       type: apigateway.ResponseType.DEFAULT_5XX,
       responseHeaders: {
-        'Access-Control-Allow-Origin': "'*'",
+        'Access-Control-Allow-Origin': `${prod}`,
         'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
         'Access-Control-Allow-Methods': "'OPTIONS,GET,POST,PUT,DELETE'",
       },
