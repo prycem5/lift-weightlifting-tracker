@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { PwaGate } from "@/components/pwaGate";
 import { QRCodeSVG } from "qrcode.react";
+import Image from "next/image";
 
 type OS = "iPhone" | "Android";
 
@@ -43,10 +44,9 @@ export default function Home() {
       <div className="min-h-screen bg-black text-white">
         <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-10 px-6 py-10">
           <section className="md:hidden flex flex-col h-screen items-center gap-6 rounded-[2rem] border border-zinc-800 bg-zinc-950 p-8">
-            <div className="h-56 w-full rounded-3xl bg-black"></div>
-            <h1 className="text-5xl font-bold uppercase tracking-tight text-white">
-              LIFT
-            </h1>
+             <div className="relative h-70 w-70">
+                        <Image src="/icon.png" alt="LIFT Logo" fill className="object-contain" priority />
+                      </div>
             <p className="max-w-md text-sm leading-7 text-zinc-400 pb-10">
               Track your sets easily across your mobile devices.
             </p>
@@ -106,21 +106,3 @@ export default function Home() {
     </>
   );
 }
-
-/* specifications 
-
-1. Dark Grey, white, black, grey, and blue only.
-2. For mobile view (sm), items are stacked vertically in flexbox div (leave an empty space, black box for now, for eventual logo insert)
-2.1. Under the space for the logo will include bold "LIFT" text in white.
-2.2. Under the space for the logo icon, a small block of text: "Track your sets easily across your mobile devices". Text color property should be light gray.
-2.3. Depending on user's os type (grabbed from a parsed navigator. If "iphone" appears in navigator.userAgent.platform, otherwise, default to android), number listed guide for installing
-PWA will appear for the appropiate device. 
-
-3. For desktop view (md+), flexbox with 3.1 being flex-1, split left to right. Line divides the two elements.
-3.1. Items are stacked vertically, with main hero in bold: "LIFT LIVES ON YOUR PHONE". 
-3.1.2. Under hero, a smaller block of text in the same light gray as in 2.2.: "LIFT is intended for mobile devices, please use your phone to add it to your mobile home screen"
-3.2. To the left, a black box for a qr code for mobile users (to be generated later). Under the qr code, a small block of text in light gray: "Scan the QR code to add LIFT to your mobile home screen"
-
-For desktop view, where the legnth is greated than width, split will become horizontal.
-
-*/

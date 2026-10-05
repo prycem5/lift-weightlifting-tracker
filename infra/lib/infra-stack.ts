@@ -128,7 +128,7 @@ export class InfraStack extends cdk.Stack {
     api.addGatewayResponse('Default4XX', {
       type: apigateway.ResponseType.DEFAULT_4XX,
       responseHeaders: {
-        'Access-Control-Allow-Origin': `${prod}`,
+        'Access-Control-Allow-Origin': `'${prod}'`,
         'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
         'Access-Control-Allow-Methods': "'OPTIONS,GET,POST,PUT,DELETE'",
       },
@@ -137,7 +137,7 @@ export class InfraStack extends cdk.Stack {
     api.addGatewayResponse('Default5XX', {
       type: apigateway.ResponseType.DEFAULT_5XX,
       responseHeaders: {
-        'Access-Control-Allow-Origin': `${prod}`,
+        'Access-Control-Allow-Origin': `'${prod}'`,
         'Access-Control-Allow-Headers': "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
         'Access-Control-Allow-Methods': "'OPTIONS,GET,POST,PUT,DELETE'",
       },
