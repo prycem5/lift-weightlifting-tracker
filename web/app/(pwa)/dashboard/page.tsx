@@ -170,9 +170,9 @@ const loadAppData = async () => {
   return (
     <>
       <PwaGate />
-      <div className=" min-h-screen pb-4 flex flex-col justify-between px-4 pt-6">
+      <div className=" min-h-screen flex flex-col justify-between  pt-6">
         {/* MAIN BODY PER TAB */}
-        <div className="flex-1 pb-4">
+        <div className="flex-1 pb-4 px-4">
           {/* TAB 1: DASHBOARD */}
           {currentTab === "dashboard" && (
             <div className="space-y-6">

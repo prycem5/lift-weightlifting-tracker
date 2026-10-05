@@ -24,6 +24,10 @@ export class InfraStack extends cdk.Stack {
       sortKey: { name: 'SK', type: dynamodb.AttributeType.STRING },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST, // most cost-effective for variable workloads.
     });
+    const environment = {
+      TABLE_NAME: liftEntities.tableName,
+      PRODUCTION_DOMAIN: prod,
+    };
 
     // the gsi supports collection and id lookups for shared exercises without scanning
     // the whole table. see https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/GSI.html.
@@ -40,42 +44,42 @@ export class InfraStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'getEntity.handler',
       code: lambda.Code.fromAsset('lambda'),
-      environment: { TABLE_NAME: liftEntities.tableName },
+      environment: environment,
     });
 
     const createEntity = new lambda.Function(this, 'createEntity', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'createEntity.handler',
       code: lambda.Code.fromAsset('lambda'),
-      environment: { TABLE_NAME: liftEntities.tableName, ADMIN_ID: process.env.ADMIN_ID || '' }, // when targeting user and exercise creation, not usable by general users.
+      environment: environment, // when targeting user and exercise creation, not usable by general users.
     });
 
     const updateEntity = new lambda.Function(this, 'updateEntity', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'updateEntity.handler',
       code: lambda.Code.fromAsset('lambda'),
-      environment: { TABLE_NAME: liftEntities.tableName, ADMIN_ID: process.env.ADMIN_ID || '' }
+      environment: environment
     });
 
     const deleteEntity = new lambda.Function(this, 'deleteEntity', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'deleteEntity.handler',
       code: lambda.Code.fromAsset('lambda'),
-      environment: { TABLE_NAME: liftEntities.tableName, ADMIN_ID: process.env.ADMIN_ID || '' }
+      environment: environment
     });
 
     const postConfirmation = new lambda.Function(this, 'postConfirmation', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'postConfirmation.handler',
       code: lambda.Code.fromAsset('lambda/cognito'),
-      environment: { TABLE_NAME: liftEntities.tableName }
+      environment: environment
     });
 
     const preToken = new lambda.Function(this, 'preToken', {
       runtime: lambda.Runtime.NODEJS_20_X,
       handler: 'preToken.handler',
       code: lambda.Code.fromAsset('lambda/cognito'),
-      environment: { TABLE_NAME: liftEntities.tableName }
+      environment: environment
     });
 
     liftEntities.grantReadData(getEntity);
